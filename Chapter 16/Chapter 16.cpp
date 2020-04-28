@@ -1,9 +1,7 @@
 #include <iostream>
 #include "Simple_window.h"
 #include "Graph.h"
-//#include "GUI.h"
 
-//Part 2 Code from Chapter 16.5
 struct Lines_window : Window {
     Lines_window(Point xy, int w, int h, const string& title);
 
@@ -16,24 +14,34 @@ private:
     In_box next_x;
     In_box next_y;
     Out_box xy_out;
+    //line color menu and button
     Menu color_menu;
     Button menu_button;
-
-    void change(Color c) { lines.set_color(c); }
-    void hide_menu() { color_menu.hide(); menu_button.show(); }
-
-    void red_pressed() { change(Color::red); }
-    void blue_pressed() { change(Color::blue); }
-    void black_pressed() { change(Color::black); }
-
+    //line style menu and button
+    Button style_button;
+    Menu line_style_menu;
+              
     void next();
     void quit();
 
-    static void cb_red(Address, Address);
-    static void cb_blue(Address, Address);
-    static void cb_black(Address, Address);
-    static void cb_menu(Address, Address);
-        
+    void linecolor_hide();
+    void linestyle_hide();
+
+    //Change line colors
+    void change(Color c) { lines.set_color(c); }
+    void color_menu_pressed() { color_menu.show(); menu_button.hide();}
+
+    void red_pressed() { change(Color::red); linecolor_hide();}
+    void blue_pressed() { change(Color::blue); linecolor_hide(); }
+    void black_pressed() { change(Color::black); linecolor_hide(); }
+
+    //Change line style
+    void change_line(Line_style c) { lines.set_style(c); }
+    void line_style_menu_pressed() {line_style_menu.show(); style_button.hide();}
+
+    void dash_pressed() { change_line(Line_style::dash); linestyle_hide();}
+    void dot_pressed() { change_line(Line_style::dot); linestyle_hide();}
+    void dashdot_pressed() { change_line(Line_style::dashdot); linestyle_hide();}
 };
 
 Lines_window::Lines_window(Point xy, int w, int h, const string& title)
@@ -43,20 +51,35 @@ Lines_window::Lines_window(Point xy, int w, int h, const string& title)
             {
                 reference_to<Lines_window>(pw).next(); 
             }
-        },//I added } to this statement
+        },
     quit_button{Point{x_max() - 70, 0}, 70, 20, "Quit",
         [](Address, Address pw)
             {
                 reference_to<Lines_window>(pw).quit();
             }
-        },//I've added } to this statement
-
+        },
+    
     next_x{Point{x_max() - 310, 0}, 50, 20, "next x:"},
     next_y{Point{x_max() - 210, 0}, 50, 20, "next y:"},
     xy_out{Point{100, 0}, 100, 20, "current (x,y):"},
 
+    //line color menu
     color_menu{ Point{x_max() - 70, 30}, 70, 20, Menu::vertical, "color" },
-    menu_button{ Point{x_max() - 80, 30}, 80, 20,"color menu",  cb_menu}
+    menu_button{ Point{x_max() - 80, 30}, 80, 20,"color menu",
+         [](Address, Address pw)
+             {
+                  reference_to<Lines_window>(pw).color_menu_pressed();
+             }
+         },
+
+    //line style menu
+    line_style_menu{Point{x_max() - 70, 100}, 70, 20, Menu::vertical, "style" },
+    style_button{Point{x_max() - 80, 110}, 80, 20,"style menu",
+         [](Address, Address pw)
+            {
+                reference_to<Lines_window>(pw).line_style_menu_pressed();
+            }
+}
 
 {
     //lines.set_color(Color::black); //I've added black color for lines.
@@ -67,13 +90,67 @@ Lines_window::Lines_window(Point xy, int w, int h, const string& title)
     attach(next_y);
     attach(xy_out);
     xy_out.put("no points");
-    color_menu.attach(new Button(Point(0, 0), 0, 0, "red", cb_red));
-    color_menu.attach(new Button(Point(0, 0), 0, 0, "blue", cb_blue));
-    color_menu.attach(new Button(Point(0, 0), 0, 0, "black", cb_black));
+
+    //color
+    color_menu.attach(new Button{ Point{0, 0}, 0, 0, "red",
+        [](Address, Address pw)
+             {
+                reference_to<Lines_window>(pw).red_pressed();
+             }
+    });
+    color_menu.attach(new Button{ Point{0, 0}, 0, 0, "blue",
+        [](Address, Address pw)
+             {
+                reference_to<Lines_window>(pw).blue_pressed();
+             } 
+    });
+    color_menu.attach(new Button{ Point{0, 0}, 0, 0, "black",
+        [](Address, Address pw)
+             {
+                reference_to<Lines_window>(pw).black_pressed();
+             }
+    });
+
     attach(color_menu);
     color_menu.hide();
     attach(menu_button);
     attach(lines);
+
+    //style
+    line_style_menu.attach(new Button{ Point{0, 0}, 0, 0, "dash",
+        [](Address, Address pw)
+             {
+                reference_to<Lines_window>(pw).dash_pressed(); 
+             }
+        });
+    line_style_menu.attach(new Button{ Point{0, 0}, 0, 0, "dot",
+        [](Address, Address pw)
+            {
+                reference_to<Lines_window>(pw).dot_pressed(); 
+            }
+        });
+    line_style_menu.attach(new Button{ Point{0, 0}, 0, 0, "dash_dot",
+        [](Address, Address pw)
+            {
+                reference_to<Lines_window>(pw).dashdot_pressed();
+            }
+        });
+
+    attach(line_style_menu);
+    line_style_menu.hide();
+    attach(style_button);
+}
+
+//hide line style menu after selection line style
+void Lines_window::linestyle_hide()
+{
+    line_style_menu.hide(); style_button.show();
+}
+
+//hide line color menu after selection line color
+void Lines_window::linecolor_hide()
+{
+    color_menu.hide(); menu_button.show();
 }
 
  void Lines_window::quit()
